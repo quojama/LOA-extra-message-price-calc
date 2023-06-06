@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "line-cal"
+version = "0.1.0"
+description = ""
+authors = ["quojama <giantkoyama@gmail.com>"]
+license = "Mit"
+readme = "README.md"
+packages = [{include = "line_cal"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

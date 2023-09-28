@@ -16,9 +16,9 @@ def index():
                 fee = math.floor(calc_result/10)
                 result = f'金額は {calc_result:,} 円です。\n※プラン費用は含まれていません。'
             else:
-                result = "LINE社へ個別にお問い合わせください"
+                result = "追加メッセージが1,000万通を超えています。この場合はL社へ個別にお問い合わせください。🤚🏻"
         except ValueError:
-            result = "入力は整数である必要があります。"
+            result = "入力は整数である必要があります🙏🏻"
     return render_template_string(template, result=result)
 
 def calculate(x):
@@ -56,7 +56,7 @@ def calculate(x):
     elif y <= 10000000:
         return round(150000 + 140000 + 260000 + 240000 + 220000 + 200000 + 190000 + 180000 + 170000 + 160000 + 150000 + 2800000 + 2600000 + 2400000 + (y - 7000000) * 1.1)
     else:
-        return "LINE社へ個別にお問い合わせください"
+        return "追加メッセージが1,000万通を超えています。この場合はL社へ個別にお問い合わせください。"
 
 template = '''
 <!doctype html>
@@ -64,13 +64,13 @@ template = '''
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>費用計算アプリ</title>
+    <title>Lくん - メッセージ費用計算</title>
   </head>
   <body>
     <div>
-      <h1>Lかつくん</h1>
+      <h1>Lくんです</h1>
       <form method="post">
-        <label for="x">無料分 30,000通を含む合計配信メッセージ数を入力してください: </label>
+        <label for="x">無料分 30,000通を含む合計配信メッセージ数を入力してください。💡: </label>
         <input type="text" id="x" name="x" required autofocus>
         <button type="submit">Calculate</button>
       </form>

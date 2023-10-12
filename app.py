@@ -14,7 +14,7 @@ def index():
             calc_result = calculate(x)
             if isinstance(calc_result, int):
                 fee = math.floor(calc_result/10)
-                result = f'金額は {calc_result:,} 円です。\n※プラン費用は含まれていません。'
+                result = f'{x:,}通の金額は {calc_result:,} 円です。\n※プラン費用は含まれていません。'
             else:
                 result = "追加メッセージが1,000万通を超えています。この場合はL社へ個別にお問い合わせください。🤚🏻"
         except ValueError:

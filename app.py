@@ -4,7 +4,7 @@ from flask import Flask, render_template_string, request
 
 app = Flask(__name__)
 
-MAX_CHART_MESSAGES = 10_000_000
+MAX_CHART_MESSAGES = 30_000_000
 CHART_SAMPLE_STEP = 500_000
 
 @app.route('/', methods=['GET', 'POST'])

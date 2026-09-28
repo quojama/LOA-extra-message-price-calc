@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 MAX_CHART_MESSAGES = 30_000_000
 CHART_SAMPLE_STEP = 500_000
-SHOW_LEGACY_COMPARISON = False  # 2026-10-01の新料金移行により旧プランの表示は停止（計算ロジックは保持）
+SHOW_LEGACY_COMPARISON = True  # しばらくは移行期間として旧プランとの比較も表示
 
 @app.route('/', methods=['GET', 'POST'])
 def index():

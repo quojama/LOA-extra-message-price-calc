@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "flask-price-calc",
+      "runtimeExecutable": ".venv/bin/python",
+      "runtimeArgs": ["-m", "flask", "run", "--port", "5050"],
+      "port": 5050,
+      "env": {
+        "FLASK_APP": "app.py"
+      }
+    }
+  ]
+}

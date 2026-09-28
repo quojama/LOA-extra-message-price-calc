@@ -6,6 +6,7 @@ app = Flask(__name__)
 
 MAX_CHART_MESSAGES = 30_000_000
 CHART_SAMPLE_STEP = 500_000
+SHOW_LEGACY_COMPARISON = False  # 2026-10-01の新料金移行により旧プランの表示は停止（計算ロジックは保持）
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -41,6 +42,7 @@ def index():
         chart_points=CHART_POINTS,
         max_chart_messages=MAX_CHART_MESSAGES,
         chart_step=CHART_SAMPLE_STEP,
+        show_legacy=SHOW_LEGACY_COMPARISON,
     )
 
 def calculate_legacy_fee(x):
@@ -186,19 +188,22 @@ template = '''
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ニューLくん - メッセージ費用計算</title>
+    <title>ニューLくん V3 - メッセージ費用計算</title>
     <style>
       :root {
         font-family: 'Inter', 'Noto Sans JP', 'SF Pro Display', 'Helvetica Neue', sans-serif;
-        --bg: #030712;
-        --bg-secondary: #0f172a;
-        --panel: rgba(15, 23, 42, 0.75);
-        --border: rgba(148, 163, 184, 0.2);
-        --text: #e2e8f0;
-        --muted: #94a3b8;
-        --legacy: #fb923c;
-        --new: #22c55e;
-        --accent: #2563eb;
+        --bg: #0b0b0d;
+        --surface: #17171a;
+        --surface-2: #1e1e22;
+        --border: rgba(255, 255, 255, 0.08);
+        --border-strong: rgba(255, 255, 255, 0.16);
+        --text: #f2f2f3;
+        --muted: #96969e;
+        --legacy: #f59e0b;
+        --new: #06c755;
+        --accent: #06c755;
+        --accent-contrast: #04210f;
+        --accent-soft: rgba(6, 199, 85, 0.12);
         --danger: #f87171;
       }
       *, *::before, *::after {
@@ -207,7 +212,7 @@ template = '''
       body {
         margin: 0;
         min-height: 100vh;
-        background: radial-gradient(circle at top, rgba(59, 130, 246, 0.12), transparent 50%), var(--bg);
+        background: var(--bg);
         color: var(--text);
         line-height: 1.6;
       }
@@ -215,16 +220,6 @@ template = '''
         max-width: 1100px;
         margin: 0 auto;
         padding: 56px 20px 80px;
-        position: relative;
-        z-index: 1;
-      }
-      .glow {
-        position: fixed;
-        inset: 0;
-        background: radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.25), transparent 45%),
-                    radial-gradient(circle at 80% 10%, rgba(14, 165, 233, 0.2), transparent 40%);
-        pointer-events: none;
-        z-index: 0;
       }
       h1, h2, h3, h4 {
         margin: 0;
@@ -232,8 +227,9 @@ template = '''
       }
       .eyebrow {
         text-transform: uppercase;
-        letter-spacing: 0.2em;
+        letter-spacing: 0.14em;
         font-size: 0.75rem;
+        font-weight: 600;
         color: var(--muted);
         margin-bottom: 8px;
       }
@@ -241,22 +237,22 @@ template = '''
         margin-bottom: 32px;
       }
       .hero h1 {
-        font-size: clamp(2rem, 4vw, 3.2rem);
-        color: #f8fafc;
+        font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--text);
       }
       .hero p {
         max-width: 640px;
-        margin-top: 16px;
+        margin-top: 14px;
         color: var(--muted);
-        font-size: 1.05rem;
+        font-size: 1rem;
       }
       .panel {
-        background: var(--panel);
+        background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: 28px;
+        border-radius: 16px;
         padding: 32px;
-        backdrop-filter: blur(12px);
-        box-shadow: 0 40px 120px rgba(2, 6, 23, 0.55);
       }
       .calc-form {
         display: flex;
@@ -265,7 +261,7 @@ template = '''
       }
       .calc-form label {
         font-weight: 600;
-        color: #f1f5f9;
+        color: var(--text);
       }
       .input-row {
         display: flex;
@@ -274,43 +270,45 @@ template = '''
       }
       input[type="text"] {
         flex: 1 1 280px;
-        padding: 16px 20px;
-        border-radius: 18px;
+        padding: 14px 16px;
+        border-radius: 10px;
         border: 1px solid var(--border);
-        background: rgba(15, 23, 42, 0.65);
+        background: var(--surface-2);
         color: var(--text);
-        font-size: 1.1rem;
+        font-size: 1.05rem;
         outline: none;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
       }
       input[type="text"]:focus {
         border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35);
+        box-shadow: 0 0 0 3px var(--accent-soft);
       }
       button {
-        padding: 16px 28px;
-        border-radius: 18px;
+        padding: 14px 24px;
+        border-radius: 10px;
         border: none;
         font-size: 1rem;
         font-weight: 600;
-        color: #fff;
-        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        color: var(--accent-contrast);
+        background: var(--accent);
         cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        transition: filter 0.15s ease;
       }
       button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 20px 30px rgba(79, 70, 229, 0.35);
+        filter: brightness(1.08);
+      }
+      button:active {
+        filter: brightness(0.96);
       }
       .form-hint {
         color: var(--muted);
-        font-size: 0.95rem;
+        font-size: 0.9rem;
         margin: 0;
       }
       .alert {
         padding: 12px 16px;
-        border-radius: 14px;
-        background: rgba(248, 113, 113, 0.15);
+        border-radius: 10px;
+        background: rgba(248, 113, 113, 0.1);
         color: var(--danger);
         border: 1px solid rgba(248, 113, 113, 0.25);
       }
@@ -318,44 +316,39 @@ template = '''
         margin-top: 32px;
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 18px;
+        gap: 16px;
       }
       .metric {
         padding: 24px;
-        border-radius: 24px;
+        border-radius: 14px;
         border: 1px solid var(--border);
-        background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9));
-        position: relative;
-        overflow: hidden;
+        border-left: 3px solid var(--border-strong);
+        background: var(--surface);
       }
-      .metric::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        border-radius: inherit;
-        border: 1px solid transparent;
-        pointer-events: none;
+      .metric.legacy {
+        border-left-color: var(--legacy);
       }
-      .metric.legacy::after {
-        border-color: rgba(251, 146, 60, 0.3);
+      .metric.new {
+        border-left-color: var(--accent);
       }
-      .metric.new::after {
-        border-color: rgba(34, 197, 94, 0.3);
+      .metric.diff.positive {
+        border-left-color: var(--legacy);
       }
-      .metric.diff::after {
-        border-color: rgba(94, 234, 212, 0.25);
+      .metric.diff.negative {
+        border-left-color: var(--accent);
       }
       .metric h3 {
         margin-bottom: 6px;
-        font-size: 1rem;
+        font-size: 0.9rem;
         letter-spacing: 0.04em;
         text-transform: uppercase;
         color: var(--muted);
       }
       .metric .value {
-        font-size: 2.4rem;
+        font-size: 2.2rem;
         font-weight: 700;
         margin: 8px 0;
+        color: var(--text);
       }
       .metric.legacy .value {
         color: var(--legacy);
@@ -364,7 +357,7 @@ template = '''
         color: var(--new);
       }
       .metric.diff .value {
-        color: #38bdf8;
+        color: var(--text);
       }
       .metric.diff.positive .value {
         color: var(--legacy);
@@ -378,46 +371,115 @@ template = '''
       }
       .details-card {
         margin-top: 24px;
-        border-radius: 28px;
+        border-radius: 16px;
         border: 1px solid var(--border);
         padding: 28px;
-        background: rgba(15, 23, 42, 0.85);
+        background: var(--surface);
       }
       .details-card h3 {
         margin-bottom: 18px;
-        color: #f8fafc;
+        color: var(--text);
       }
       .detail-row {
         display: flex;
         justify-content: space-between;
         padding: 12px 0;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+        border-bottom: 1px solid var(--border);
         color: var(--muted);
       }
       .detail-row:last-child {
         border-bottom: none;
       }
       .detail-row strong {
-        color: #f4f4f5;
+        color: var(--text);
         font-size: 1.05rem;
       }
       .pill {
         display: inline-flex;
         align-items: center;
-        padding: 6px 14px;
+        padding: 6px 12px;
         border-radius: 999px;
         border: 1px solid var(--border);
         color: var(--muted);
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         gap: 6px;
-        background: rgba(15, 23, 42, 0.7);
+        background: var(--surface-2);
+      }
+      .plan-explainer {
+        margin-bottom: 32px;
+      }
+      .plan-explainer h2 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 20px;
+      }
+      .plan-steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+      }
+      .plan-step {
+        padding: 20px;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        background: var(--surface-2);
+      }
+      .plan-step .pill {
+        margin-bottom: 12px;
+        color: var(--accent);
+        background: var(--accent-soft);
+        border-color: transparent;
+      }
+      .plan-step h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 8px;
+      }
+      .plan-step .value {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--accent);
+        margin: 0 0 8px;
+      }
+      .plan-step p:not(.value) {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+      .plan-formula {
+        margin-top: 20px;
+        padding: 18px 22px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+      }
+      .plan-formula h3 {
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+        margin-bottom: 10px;
+      }
+      .plan-formula p {
+        margin: 6px 0;
+        color: var(--text);
+        font-family: 'SF Mono', 'Menlo', monospace;
+        font-size: 0.9rem;
+      }
+      .plan-example {
+        margin-top: 16px;
+        color: var(--muted);
+        font-size: 0.88rem;
       }
       .chart-card {
-        margin-top: 40px;
+        margin-top: 32px;
         padding: 32px;
-        border-radius: 28px;
+        border-radius: 16px;
         border: 1px solid var(--border);
-        background: rgba(2, 6, 23, 0.85);
+        background: var(--surface);
       }
       .chart-head {
         display: flex;
@@ -428,7 +490,8 @@ template = '''
         margin-bottom: 24px;
       }
       .chart-head h2 {
-        font-size: 1.4rem;
+        font-size: 1.3rem;
+        font-weight: 700;
       }
       .chart-canvas {
         position: relative;
@@ -441,13 +504,13 @@ template = '''
       .chart-caption {
         margin-top: 18px;
         color: var(--muted);
-        font-size: 0.95rem;
+        font-size: 0.9rem;
       }
       .footer {
-        margin-top: 56px;
+        margin-top: 48px;
         text-align: center;
         color: var(--muted);
-        font-size: 0.9rem;
+        font-size: 0.85rem;
       }
       @media (max-width: 640px) {
         .panel, .details-card, .chart-card {
@@ -466,13 +529,46 @@ template = '''
     </style>
   </head>
   <body>
-    <div class="glow" aria-hidden="true"></div>
     <div class="page">
       <header class="hero">
         <p class="eyebrow">LINE Official Account helper</p>
-        <h1>ニューLくんです</h1>
+        <h1>ニューLくんです V3</h1>
+        {% if show_legacy %}
         <p>無料枠30,000通を含む合計配信数を入れるだけで、段階制の旧プランと、新しいシンプルな単価プランの差額が一目でわかります。</p>
+        {% else %}
+        <p>2026年10月1日から新料金プランに移行しました。無料枠30,000通を含む合計配信数を入れるだけで、料金をシンプルに計算できます。</p>
+        {% endif %}
       </header>
+
+      <section class="panel plan-explainer">
+        <h2>新料金プランのしくみ</h2>
+        <div class="plan-steps">
+          <article class="plan-step">
+            <span class="pill">無料枠</span>
+            <h3>0〜30,000通</h3>
+            <p class="value">¥0</p>
+            <p>毎月30,000通までは無料でご利用いただけます。</p>
+          </article>
+          <article class="plan-step">
+            <span class="pill">1通あたり3円</span>
+            <h3>30,001〜230,000通</h3>
+            <p class="value">¥3 / 通</p>
+            <p>無料枠を超えた分のうち、最初の200,000通は1通3円です。</p>
+          </article>
+          <article class="plan-step">
+            <span class="pill">1通あたり2.5円</span>
+            <h3>230,001通〜</h3>
+            <p class="value">¥2.5 / 通</p>
+            <p>さらに超えた分は1通あたり2.5円に単価が下がります。</p>
+          </article>
+        </div>
+        <div class="plan-formula">
+          <h3>計算式</h3>
+          <p>追加メッセージ数 = 合計配信数 − 30,000通</p>
+          <p>料金 = min(追加メッセージ数, 200,000) × 3円 + max(追加メッセージ数 − 200,000, 0) × 2.5円</p>
+        </div>
+        <p class="plan-example">例: 合計500,000通を配信した場合、追加メッセージ数は470,000通。最初の200,000通分は3円（60万円）、残り270,000通分は2.5円（67.5万円）で、合計 ¥1,275,000 です。</p>
+      </section>
 
       <section class="panel input-card">
         <form method="post" class="calc-form">
@@ -490,16 +586,19 @@ template = '''
 
       {% if comparison %}
       <section class="metrics">
+        {% if show_legacy %}
         <article class="metric legacy">
           <h3>旧料金プラン</h3>
           <p class="value">¥{{ currency(comparison.legacy_fee) }}</p>
           <p>追加メッセージ {{ format_number(comparison.additional_messages) }} 通</p>
         </article>
+        {% endif %}
         <article class="metric new">
-          <h3>新料金プラン</h3>
+          <h3>料金</h3>
           <p class="value">¥{{ currency(comparison.new_fee) }}</p>
           <p>〜200,000通: 3円 / 以降: 2.5円</p>
         </article>
+        {% if show_legacy %}
         <article class="metric diff {% if comparison.difference < 0 %}negative{% elif comparison.difference > 0 %}positive{% endif %}">
           <h3>差額</h3>
           <p class="value">
@@ -513,6 +612,7 @@ template = '''
           </p>
           <p>{% if comparison.difference > 0 %}新料金の方が高いです{% elif comparison.difference < 0 %}新料金の方がお得です{% else %}同じ金額です{% endif %}</p>
         </article>
+        {% endif %}
       </section>
 
       <section class="details-card">
@@ -525,10 +625,12 @@ template = '''
           <span>無料分を除いた追加メッセージ</span>
           <strong>{{ format_number(comparison.additional_messages) }} 通</strong>
         </div>
+        {% if show_legacy %}
         <div class="detail-row">
           <span>旧料金プラン</span>
           <span class="pill">段階制の従量課金</span>
         </div>
+        {% endif %}
         <div class="detail-row">
           <span>新料金プラン</span>
           <span class="pill">20万通まで3円 / 以降2.5円</span>
@@ -540,14 +642,18 @@ template = '''
         <div class="chart-head">
           <div>
             <p class="eyebrow">Fee trend</p>
-            <h2>1通〜{{ format_number(max_chart_messages) }}通の比較グラフ</h2>
+            <h2>1通〜{{ format_number(max_chart_messages) }}通の料金推移{% if show_legacy %}比較グラフ{% endif %}</h2>
           </div>
           <div class="pill">約{{ format_number(chart_step) }}通おきのサンプル</div>
         </div>
         <div class="chart-canvas">
-          <canvas id="priceChart" aria-label="料金の比較グラフ"></canvas>
+          <canvas id="priceChart" aria-label="料金の推移グラフ"></canvas>
         </div>
+        {% if show_legacy %}
         <p class="chart-caption">旧料金の複雑な段階制と、新料金のシンプルな単価体系がどこで逆転するかを直感的に把握できます。</p>
+        {% else %}
+        <p class="chart-caption">配信メッセージ数に応じた料金の増え方をシンプルに把握できます。</p>
+        {% endif %}
       </section>
 
       <footer class="footer">
@@ -561,6 +667,7 @@ template = '''
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         const points = {{ chart_points|tojson }};
+        const showLegacy = {{ show_legacy | tojson }};
         const legacyData = points.map(point => ({ x: point.messages, y: point.legacy }));
         const newData = points.map(point => ({ x: point.messages, y: point.new }));
         const numberFormatter = new Intl.NumberFormat('ja-JP');
@@ -570,31 +677,34 @@ template = '''
           maximumFractionDigits: 1,
         });
 
+        const datasets = [];
+        if (showLegacy) {
+          datasets.push({
+            label: '旧料金プラン',
+            data: legacyData,
+            borderColor: 'rgba(251, 146, 60, 1)',
+            backgroundColor: 'rgba(251, 146, 60, 0.08)',
+            borderWidth: 3,
+            tension: 0.25,
+            pointRadius: 0,
+            pointHitRadius: 12,
+          });
+        }
+        datasets.push({
+          label: showLegacy ? '新料金プラン' : '料金',
+          data: newData,
+          borderColor: 'rgba(6, 199, 85, 1)',
+          backgroundColor: 'rgba(6, 199, 85, 0.1)',
+          borderWidth: 2,
+          tension: 0.2,
+          pointRadius: 0,
+          pointHitRadius: 12,
+        });
+
         new Chart(ctx, {
           type: 'line',
           data: {
-            datasets: [
-              {
-                label: '旧料金プラン',
-                data: legacyData,
-                borderColor: 'rgba(251, 146, 60, 1)',
-                backgroundColor: 'rgba(251, 146, 60, 0.08)',
-                borderWidth: 3,
-                tension: 0.25,
-                pointRadius: 0,
-                pointHitRadius: 12,
-              },
-              {
-                label: '新料金プラン',
-                data: newData,
-                borderColor: 'rgba(34, 197, 94, 1)',
-                backgroundColor: 'rgba(34, 197, 94, 0.12)',
-                borderWidth: 3,
-                tension: 0.25,
-                pointRadius: 0,
-                pointHitRadius: 12,
-              },
-            ],
+            datasets: datasets,
           },
           options: {
             responsive: true,
@@ -606,14 +716,14 @@ template = '''
             plugins: {
               legend: {
                 labels: {
-                  color: '#e2e8f0',
+                  color: '#f2f2f3',
                   usePointStyle: true,
                   pointStyle: 'circle',
                 },
               },
               tooltip: {
-                backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                borderColor: 'rgba(148, 163, 184, 0.35)',
+                backgroundColor: '#1e1e22',
+                borderColor: 'rgba(255, 255, 255, 0.12)',
                 borderWidth: 1,
                 callbacks: {
                   title(items) {
@@ -634,35 +744,35 @@ template = '''
                 min: 0,
                 max: {{ max_chart_messages }},
                 ticks: {
-                  color: '#94a3b8',
+                  color: '#96969e',
                   callback(value) {
                     if (value === 0) return '0 通';
                     return `${numberFormatter.format(value)} 通`;
                   },
                 },
                 grid: {
-                  color: 'rgba(148, 163, 184, 0.15)',
+                  color: 'rgba(255, 255, 255, 0.06)',
                 },
                 title: {
                   display: true,
                   text: '配信メッセージ数',
-                  color: '#e2e8f0',
+                  color: '#f2f2f3',
                 },
               },
               y: {
                 ticks: {
-                  color: '#94a3b8',
+                  color: '#96969e',
                   callback(value) {
                     return currencyFormatter.format(value);
                   },
                 },
                 grid: {
-                  color: 'rgba(148, 163, 184, 0.1)',
+                  color: 'rgba(255, 255, 255, 0.06)',
                 },
                 title: {
                   display: true,
                   text: '費用 (円)',
-                  color: '#e2e8f0',
+                  color: '#f2f2f3',
                 },
               },
             },
